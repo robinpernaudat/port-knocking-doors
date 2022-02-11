@@ -18,3 +18,4 @@ The daemon listens to the concerned UDP ports looking for the sequence. It check
 This project is developed in Rust: to mitigate a family of flaws based on buffer overflow, to allow to build easily a binary for any target (raspberry pi, other ARM cards, NAS Synology, Android, conventional server...); to build a binary without dependencies; to improve my skills in this language.
 
 # historique
+2021-02-11 This repo is just started. Not buildable yet !
