@@ -1,4 +1,5 @@
 mod data;
+mod args;
 
 use log::{info, trace, warn, debug};
 
@@ -29,15 +30,15 @@ pub fn init_log() -> Result<(), SetLoggerError> {
         .map(|()| log::set_max_level(LevelFilter::Debug))
 }
 
+static mut MAIN_ARGS: Option<args::Args> = None;
 
 fn main() {
     let _ = init_log();
+    unsafe{MAIN_ARGS = Some(args::parse());}
     debug!("Starting");
     if data::is_terminal(){
         debug!("running in terminal");
     }
-
-    
-
-
+    debug!("port sequence = {:?}", data::knock_seq());
+    debug!("ports = {:?}", data::ports());
 }
