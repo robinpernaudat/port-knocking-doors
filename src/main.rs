@@ -35,10 +35,18 @@ static mut MAIN_ARGS: Option<args::Args> = None;
 fn main() {
     let _ = init_log();
     unsafe{MAIN_ARGS = Some(args::parse());}
-    debug!("Starting");
+    info!("Starting");
     if data::is_terminal(){
         debug!("running in terminal");
     }
     debug!("port sequence = {:?}", data::knock_seq());
-    debug!("ports = {:?}", data::ports());
+    info!("List of managed ports : {:?}", data::ports());
+
+    //TODO
+    // keep IP list of tryers for 1 minutes
+    // keep in memory IP allowed for 5 minutes
+    // IP for seq failled are added wrotten in log
+    // an IP allowed, reset his timeout if seq redone
+    // conf firewalld, iptables if Linux
+    // conf Windows firewall if windows
 }
