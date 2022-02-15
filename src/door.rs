@@ -17,15 +17,16 @@ pub async fn init(){
     for port in ports {
         let socket_address = SocketAddr::from(([0,0,0,0], port));
         unsafe{
-            SOCKETS_ADDR.push(socket_address);
+            SOCKETS_ADDR.push(socket_address.clone());
         }
         debug!("port {:?} availlable for port sequence", port);
         let socket = UdpSocket::bind(socket_address).expect("can't map port");
         tokio::spawn(async move {
-            let mut buff = [0; 128];
+            let mut buf = [0; 128];
             loop{
-                let (readed, emetter):(usize, SocketAddr) = socket.recv_from(&mut buff).expect("no data received");
-                if readed == 6 {
+                debug!("waitting for message on {}", socket_address);
+                let (readed, emetter):(usize, SocketAddr) = socket.recv_from(&mut buf).expect("no data received");
+                if readed == 6 && buf[0]==b'k' && buf[1]==b'n' && buf[2]==b'o' && buf[3]==b'c' && buf[4]==b'k' {
                     debug!("received : {}", readed);
                     let ip: IpAddr = emetter.ip();
                     workflow::knock(ip, port);
@@ -33,6 +34,7 @@ pub async fn init(){
             }
             //thread managing one socket.
         });
+        debug!("port configured");
     }
     
 }
