@@ -1,5 +1,7 @@
 mod data;
 mod args;
+mod workflow;
+mod door;
 
 use log::{info, trace, warn, debug};
 
@@ -32,7 +34,8 @@ pub fn init_log() -> Result<(), SetLoggerError> {
 
 static mut MAIN_ARGS: Option<args::Args> = None;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let _ = init_log();
     unsafe{MAIN_ARGS = Some(args::parse());}
     info!("Starting");
@@ -42,11 +45,8 @@ fn main() {
     debug!("port sequence = {:?}", data::knock_seq());
     info!("List of managed ports : {:?}", data::ports());
 
-    //TODO
-    // keep IP list of tryers for 1 minutes
-    // keep in memory IP allowed for 5 minutes
-    // IP for seq failled are added wrotten in log
-    // an IP allowed, reset his timeout if seq redone
-    // conf firewalld, iptables if Linux
-    // conf Windows firewall if windows
+    door::init().await;
+    workflow::init().await;
+
+    workflow::wait_the_end();
 }
