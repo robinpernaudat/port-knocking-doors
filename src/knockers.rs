@@ -31,7 +31,7 @@ impl Knockers{
                 if existing_knocker.error{
                     let time_from_last_time: Duration = Instant::now() - existing_knocker.last_knock;
                     if time_from_last_time < IGNORING_TIME_AFTER_ERROR{
-                        debug!("this peer was banned");
+                        debug!("This peer was banned, it have to wait for {} seconds from now !", IGNORING_TIME_AFTER_ERROR.as_secs());
                         existing_knocker.last_knock = Instant::now();
                         return;
                     }
@@ -68,6 +68,15 @@ impl Knockers{
     /// 
     /// after a duration of MAX_KNOCKER_LIVE_TIME since the last knock, a knocker is removed from the list
     pub fn clean_up(&mut self){
-        todo!();
+        let mut to_be_deleted: Vec<IpAddr> = Vec::new();
+        for (ip, knocker) in &self.list{
+            let duration_since_last_knock = Instant::now() - knocker.last_knock;
+            if duration_since_last_knock > MAX_KNOCKER_LIVE_TIME{
+                to_be_deleted.push(ip.clone());
+            }
+        }
+        for ip_to_delete in to_be_deleted{
+            self.list.remove(&ip_to_delete);
+        }
     }
 }
