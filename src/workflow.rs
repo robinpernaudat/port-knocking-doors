@@ -11,12 +11,12 @@
 //! - conf Windows firewall if windows
 
 use log::{debug, error};
+use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender}; //one sender in this channel
-use std::time::{Instant, Duration};
-use std::net::IpAddr;
+use std::time::{Duration, Instant};
 
-use crate::{knock, knockers, door};
+use crate::{door, knock, knockers};
 
 pub enum Msg {
     KNOCK(knock::Knock),
@@ -78,10 +78,12 @@ impl WF {
             Msg::QUIT => unsafe {
                 WANT_TO_QUIT = AtomicBool::new(true);
             },
-            Msg::KNOCK(k) => {self.knockers.event(k);},
+            Msg::KNOCK(k) => {
+                self.knockers.event(k);
+            }
             Msg::CLEANUP => {
                 self.knockers.clean_up();
-            },
+            }
         }
     }
 
@@ -125,7 +127,7 @@ pub fn knock(k: knock::Knock) {
     };
 }
 
-pub fn open_the_door(ip: IpAddr){
+pub fn open_the_door(ip: IpAddr) {
     unsafe {
         match &mut MAIN_WF {
             None => (),

@@ -11,7 +11,10 @@ pub struct Knock {
 
 impl Knock {
     pub fn new(ip: IpAddr, port: u16) -> Knock {
-        Knock { ip, port, when: std::time::Instant::now()}
+        Knock {
+            ip,
+            port,
+            when: std::time::Instant::now(),
+        }
     }
 }
-

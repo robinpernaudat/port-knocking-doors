@@ -2,13 +2,13 @@
 //!
 //! This start listening on UDP ports for knocking.
 use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
-use crate::{data, knock, workflow, firewall};
+use crate::{data, firewall, knock, workflow};
 use log::debug;
 
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 static mut THREAD_COUNT: AtomicUsize = AtomicUsize::new(0);
 static mut SOCKETS_ADDR: Vec<SocketAddr> = Vec::new();
@@ -16,51 +16,53 @@ static mut SOCKETS_ADDR: Vec<SocketAddr> = Vec::new();
 pub const MAX_OPENED_DURATION: Duration = Duration::from_secs(10);
 pub const CLEANUP_PERIODE: Duration = Duration::from_secs(10);
 
-pub struct Door{
+pub struct Door {
     pub ip: IpAddr,
     pub opened_instant: Instant,
 }
 
-pub struct Doors{
+pub struct Doors {
     pub l: HashMap<IpAddr, Door>,
 }
 
-impl Doors{
-    pub fn new()->Doors{
-        Doors{l:HashMap::new()}
+impl Doors {
+    pub fn new() -> Doors {
+        Doors { l: HashMap::new() }
     }
-    pub fn cleanup(&mut self){
+    pub fn cleanup(&mut self) {
         debug!("doors cleanning up");
         let mut idx_of_door_to_be_deleted: Vec<IpAddr> = Vec::new();
-        for d in &self.l{
+        for d in &self.l {
             let duration_since_last_knock = Instant::now() - d.1.opened_instant;
-            if duration_since_last_knock > MAX_OPENED_DURATION{
+            if duration_since_last_knock > MAX_OPENED_DURATION {
                 idx_of_door_to_be_deleted.push(d.1.ip);
             }
         }
-        idx_of_door_to_be_deleted.reverse();//to put the higher index first
-        
+        idx_of_door_to_be_deleted.reverse(); //to put the higher index first
+
         while let Some(ip) = idx_of_door_to_be_deleted.pop() {
             debug!("closing ports for {}", &ip);
-            if firewall::close(ip){
+            if firewall::close(ip) {
                 self.l.remove(&ip);
             }
         }
     }
-    pub fn open_the_door(&mut self, ip: IpAddr){
-        let door = Door{ip, opened_instant: Instant::now()};
-        if let Some(d) = self.l.get_mut(&ip){
+    pub fn open_the_door(&mut self, ip: IpAddr) {
+        let door = Door {
+            ip,
+            opened_instant: Instant::now(),
+        };
+        if let Some(d) = self.l.get_mut(&ip) {
             debug!("ports stay opened for {}", &ip);
             d.opened_instant = Instant::now();
-        }else{
+        } else {
             debug!("ports are opened for {}", &ip);
-            if firewall::open(ip){
-                self.l.insert(ip,door);
+            if firewall::open(ip) {
+                self.l.insert(ip, door);
             }
         }
     }
 }
-
 
 pub async fn init() {
     debug!("Initializing the door");
