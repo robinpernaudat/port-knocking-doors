@@ -2,6 +2,7 @@ mod args;
 mod data;
 mod door;
 mod knock;
+mod knockers;
 mod workflow;
 
 use log::{/*trace, warn,*/ debug, info};

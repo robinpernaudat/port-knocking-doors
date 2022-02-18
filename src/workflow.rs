@@ -13,13 +13,14 @@
 use log::{debug, error};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender}; //one sender in this channel
-use std::time::Duration;
+use std::time::{Instant, Duration};
 
-use crate::knock;
+use crate::{knock, knockers};
 
 pub enum Msg {
     KNOCK(knock::Knock),
     QUIT,
+    CLEANUP,
 }
 
 static mut WANT_TO_QUIT: AtomicBool = AtomicBool::new(false);
@@ -30,15 +31,22 @@ static mut MAIN_WF: Option<WF> = None;
 pub struct WF {
     sender: Sender<Msg>,
     receiver: Receiver<Msg>,
+    knockers: knockers::Knockers,
 }
 
 impl WF {
     pub fn wait_the_end(&self) {
         debug!("Wait for the end of the workflow");
+        let mut last_cleanup: Instant = Instant::now();
         loop {
             std::thread::sleep(Duration::from_millis(100));
             if !unsafe { THREAD_RUNNING.load(Ordering::Relaxed) } {
                 break;
+            }
+            let time_since_last_clean_up: Duration = Instant::now() - last_cleanup;
+            if time_since_last_clean_up > knockers::MAX_KNOCKER_LIVE_TIME {
+                last_cleanup = Instant::now();
+                let _ = self.sender.send(Msg::CLEANUP);
             }
         }
     }
@@ -49,7 +57,7 @@ impl WF {
      * This is a blocking call.
      * When a message on @receiver is there, it's treated and then the function return.
      */
-    fn iterate(&self) {
+    fn iterate(&mut self) {
         match self.receiver.recv_timeout(Duration::from_secs(1)) {
             Ok(msg) => self.treat_message(msg),
             Err(RecvTimeoutError::Timeout) => (),
@@ -57,12 +65,15 @@ impl WF {
         }
     }
 
-    fn treat_message(&self, m: Msg) {
+    fn treat_message(&mut self, m: Msg) {
         match m {
             Msg::QUIT => unsafe {
                 WANT_TO_QUIT = AtomicBool::new(true);
             },
-            Msg::KNOCK(k) => {}
+            Msg::KNOCK(k) => {self.knockers.event(k);},
+            Msg::CLEANUP => {
+                self.knockers.clean_up();
+            },
         }
     }
 
@@ -113,9 +124,10 @@ pub fn init() {
         unsafe {
             THREAD_RUNNING = AtomicBool::new(true);
         };
-        let wf = WF {
+        let mut wf = WF {
             sender: s,
             receiver: r,
+            knockers: knockers::Knockers::new(),
         };
         loop {
             if unsafe { WANT_TO_QUIT.load(Ordering::Relaxed) } {
