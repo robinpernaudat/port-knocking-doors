@@ -7,8 +7,10 @@ use log::{debug};
 use crate::data;
 use crate::workflow;
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static mut THREAD_COUNT: AtomicUsize = AtomicUsize::new(0);
 static mut SOCKETS_ADDR: Vec<SocketAddr> = Vec::new();
-static mut SOCKETS: Vec<UdpSocket> = Vec::new();
 
 pub async fn init(){
     debug!("Initializing the door");
@@ -21,7 +23,8 @@ pub async fn init(){
         }
         debug!("port {:?} availlable for port sequence", port);
         let socket = UdpSocket::bind(socket_address).expect("can't map port");
-        tokio::spawn(async move {
+        let _ = std::thread::spawn( move|| {
+            unsafe{THREAD_COUNT.fetch_add(1, Ordering::Relaxed);};
             let mut buf = [0; 128];
             loop{
                 debug!("waitting for message on {}", socket_address);
@@ -32,13 +35,10 @@ pub async fn init(){
                     workflow::knock(ip, port);
                 }
             }
-            //thread managing one socket.
         });
         debug!("port configured");
     }
-    
 }
-
 
 
 
