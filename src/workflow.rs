@@ -16,7 +16,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender}; //one sender in this channel
 use std::time::{Duration, Instant};
 
-use crate::{door, knock, knockers};
+use crate::{door, firewall, knock, knockers};
 
 pub enum Msg {
     KNOCK(knock::Knock),
@@ -41,6 +41,7 @@ impl WF {
         debug!("Wait for the end of the workflow");
         let mut last_knock_cleanup: Instant = Instant::now();
         let mut last_doors_cleanup: Instant = Instant::now();
+        let mut last_firwall_checkup: Instant = Instant::now();
         loop {
             std::thread::sleep(Duration::from_millis(100));
             if !unsafe { THREAD_RUNNING.load(Ordering::Relaxed) } {
@@ -55,6 +56,12 @@ impl WF {
             if time_since_last_door_clean_up > door::CLEANUP_PERIODE {
                 last_doors_cleanup = Instant::now();
                 self.doors.cleanup();
+            }
+
+            let time_since_last_firewall_checkup = Instant::now() - last_firwall_checkup;
+            if time_since_last_firewall_checkup > firewall::RULES_CHECK_PERIODE {
+                last_firwall_checkup = Instant::now();
+                firewall::checkup();
             }
         }
     }

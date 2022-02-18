@@ -48,6 +48,7 @@ async fn main() {
     debug!("port sequence = {:?}", data::knock_seq());
     info!("List of managed ports : {:?}", data::ports());
 
+    firewall::init();
     workflow::init();
     door::init().await;
 
