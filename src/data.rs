@@ -4,22 +4,21 @@
 //! 
 use crate::MAIN_ARGS;
 use regex::Regex;
-use log::*;
 
-struct Parameters{
+// struct Parameters{
 
-}
+// }
 
 // pub fn configuration_path_finder() -> String{
 //     if !envmnt::exists("KNOCKER_FILE") {
 //         format!("{}",envmnt::get_or_panic("KNOCKER_FILE"))
 //     }
 // }
-fn regex_validators()->(Regex, Regex){
-    let re_matching_the_sequence: regex::Regex = Regex::new(r"^\d{1,5}(?:,\d{1,5}){4,20}$").unwrap();
-    let re_matching_ports_list = Regex::new(r"^\d{1,5}(?:,\d{1,5}){0,20}$").unwrap();
-    return (re_matching_the_sequence, re_matching_ports_list);
-}
+// fn regex_validators()->(Regex, Regex){
+//     let re_matching_the_sequence: regex::Regex = Regex::new(r"^\d{1,5}(?:,\d{1,5}){4,20}$").unwrap();
+//     let re_matching_ports_list = Regex::new(r"^\d{1,5}(?:,\d{1,5}){0,20}$").unwrap();
+//     return (re_matching_the_sequence, re_matching_ports_list);
+// }
 
 
 /**
