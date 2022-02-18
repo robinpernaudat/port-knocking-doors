@@ -10,54 +10,108 @@
 //! - conf firewalld, iptables if Linux
 //! - conf Windows firewall if windows
 
-use std::time::{Duration, Instant};
+use std::time::{Duration};
 use std::net::IpAddr;
-use log::{debug};
-use std::sync::mpsc::{channel, Sender, Receiver};//one sender in this channel
-
+use log::{debug, error};
+use std::sync::mpsc::{channel, Sender, Receiver, RecvTimeoutError};//one sender in this channel
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub enum Msg{
     KNOCK(IpAddr, u16),
     QUIT,
 }
 
-static mut MAIN_WF: Option<WF_T> = None;
+static mut WANT_TO_QUIT: AtomicBool = AtomicBool::new(false);
+static mut THREAD_RUNNING: AtomicBool = AtomicBool::new(false);
+
+static mut MAIN_WF: Option<WF> = None;
 
 
-pub struct WF_T{
-    //sender: Sender<Msg>,
+pub struct WF{
+    sender: Sender<Msg>,
     receiver: Receiver<Msg>,
-    thread: std::thread::JoinHandle<()>,
 }
 
-impl WF_T{
-    fn wait_the_end(self){
+impl WF{
+    pub fn wait_the_end(&self){
         debug!("Wait for the end of the workflow");
-        self.thread.join();
+        loop{
+            std::thread::sleep(Duration::from_millis(100));
+            if !unsafe{THREAD_RUNNING.load(Ordering::Relaxed)}{
+                break;
+            }
+        }
     }
-    
+    /**
+     * That's where messages are treated
+     * 
+     * This is a blocking call.
+     * When a message on @receiver is there, it's treated and then the function return.
+     */
+    fn iterate(&self){
+        match self.receiver.recv_timeout(Duration::from_secs(1)){
+            Ok(msg) => self.treat_message(msg),
+            Err(RecvTimeoutError::Timeout)=>(),
+            Err(e)=>error!("Something wrong in the workflow iterate function : {}", e),
+        }
+    }
+    fn treat_message(&self, m: Msg){
+        match m{
+            Msg::QUIT => unsafe{WANT_TO_QUIT=AtomicBool::new(true);},
+            Msg::KNOCK(ip, port)=>todo!(),
+        }
+    }
+    fn send_msg(&self, msg: Msg){
+        let _ = self.sender.send(msg);
+    }
 }
 
-pub fn join(){
+fn quit(){
     unsafe{
-        if let Some(w) = &MAIN_WF{
-            &w.thread.join();
+        match &MAIN_WF{
+            None => (),
+            Some(wf) => {
+                let m: Msg = Msg::QUIT;
+                wf.send_msg(m);
+            },
         }
     };
 }
 
-pub fn knock(who: IpAddr, knock_port: u16){
-    debug!("konck on {} from {}", knock_port, who);
-    
+
+pub fn join(){
+    unsafe{
+        match &MAIN_WF{
+            None => (),
+            Some(wf) => wf.wait_the_end(),
+        }
+    };
+    quit();
 }
 
-pub fn init()->Sender<Msg>{
+pub fn knock(who: IpAddr, knock_port: u16){
+    debug!("konck on {} from {}", knock_port, who);
+    unsafe{
+        match &MAIN_WF{
+            None => (),
+            Some(wf) => {
+                let m: Msg = Msg::KNOCK(who, knock_port);
+                wf.send_msg(m);
+            },
+        }
+    };
+}
+
+pub fn init(){
     debug!("Initializing the workflow.");
     let (s,r)=channel();
-    let th = std::thread::spawn(move ||{
-        loop{}
+    let _ = std::thread::spawn(move ||{
+        unsafe{THREAD_RUNNING=AtomicBool::new(true);};
+        let wf = WF{sender: s, receiver:r};
+        loop{
+            if unsafe{WANT_TO_QUIT.load(Ordering::Relaxed)} {break;}
+            wf.iterate();
+        }
+        unsafe{THREAD_RUNNING=AtomicBool::new(false);};
     });
-    let wf = WF_T{receiver:r, thread: th};
-    unsafe{MAIN_WF = Some(wf);};
-    s
 }

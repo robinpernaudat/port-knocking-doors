@@ -3,7 +3,7 @@ mod args;
 mod workflow;
 mod door;
 
-use log::{info, trace, warn, debug};
+use log::{info, /*trace, warn,*/ debug};
 
 
 use log::{Record, Level, Metadata};
@@ -45,8 +45,9 @@ async fn main() {
     debug!("port sequence = {:?}", data::knock_seq());
     info!("List of managed ports : {:?}", data::ports());
 
-    let sender = workflow::init();
+    workflow::init();
     door::init().await;
     
     workflow::join();
+
 }
