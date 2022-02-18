@@ -1,12 +1,12 @@
-mod data;
 mod args;
-mod workflow;
+mod data;
 mod door;
+mod knock;
+mod workflow;
 
-use log::{info, /*trace, warn,*/ debug};
+use log::{/*trace, warn,*/ debug, info};
 
-
-use log::{Record, Level, Metadata};
+use log::{Level, Metadata, Record};
 
 struct SimpleLogger;
 
@@ -23,13 +23,12 @@ impl log::Log for SimpleLogger {
 
     fn flush(&self) {}
 }
-use log::{SetLoggerError, LevelFilter};
+use log::{LevelFilter, SetLoggerError};
 
 static LOGGER: SimpleLogger = SimpleLogger;
 
 pub fn init_log() -> Result<(), SetLoggerError> {
-    log::set_logger(&LOGGER)
-        .map(|()| log::set_max_level(LevelFilter::Debug))
+    log::set_logger(&LOGGER).map(|()| log::set_max_level(LevelFilter::Debug))
 }
 
 static mut MAIN_ARGS: Option<args::Args> = None;
@@ -37,9 +36,11 @@ static mut MAIN_ARGS: Option<args::Args> = None;
 #[tokio::main]
 async fn main() {
     let _ = init_log();
-    unsafe{MAIN_ARGS = Some(args::parse());}
+    unsafe {
+        MAIN_ARGS = Some(args::parse());
+    }
     info!("Starting");
-    if data::is_terminal(){
+    if data::is_terminal() {
         debug!("running in terminal");
     }
     debug!("port sequence = {:?}", data::knock_seq());
@@ -47,7 +48,6 @@ async fn main() {
 
     workflow::init();
     door::init().await;
-    
-    workflow::join();
 
+    workflow::join();
 }
