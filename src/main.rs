@@ -3,6 +3,7 @@ mod data;
 mod door;
 mod knock;
 mod knockers;
+mod firewall;
 mod workflow;
 
 use log::{/*trace, warn,*/ debug, info};

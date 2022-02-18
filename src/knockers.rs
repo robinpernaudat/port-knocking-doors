@@ -1,6 +1,6 @@
 //! Knockers are client who knock.
 
-use crate::{knock, data};
+use crate::{knock, data, workflow};
 use log::{debug};
 use std::net::IpAddr;
 use std::time::{Instant, Duration};
@@ -24,6 +24,7 @@ impl Knockers{
     pub fn new()->Knockers{
         Knockers{list: HashMap::new(), sequence: data::knock_seq()}
     }
+
     pub fn event(&mut self, k: knock::Knock){
         let sequence_size: usize = self.list.len();
         match self.list.get_mut(&k.ip){
@@ -45,12 +46,14 @@ impl Knockers{
                 if aspected_port == k.port {
                     existing_knocker.next_step += 1;
                     existing_knocker.error = false;
+                    if existing_knocker.next_step == sequence_size{
+                        self.open_port_for(k.ip);
+                    }
                 }else{
                     debug!("This IP [{}] try a bad sequence", &k.ip);
                     existing_knocker.error = true;
                     existing_knocker.next_step=0;
                 }
-                todo!("anti brutforce things")
             },
             None => {
                 let new_knocker = Knocker{
@@ -62,6 +65,10 @@ impl Knockers{
                 self.event(k);
             },
         }
+    }
+
+    fn open_port_for(&self, ip: IpAddr){
+        workflow::open_the_door(ip);
     }
 
     /// knocker garbage collection

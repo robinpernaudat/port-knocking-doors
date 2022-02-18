@@ -14,8 +14,9 @@ use log::{debug, error};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender}; //one sender in this channel
 use std::time::{Instant, Duration};
+use std::net::IpAddr;
 
-use crate::{knock, knockers};
+use crate::{knock, knockers, door};
 
 pub enum Msg {
     KNOCK(knock::Knock),
@@ -32,21 +33,28 @@ pub struct WF {
     sender: Sender<Msg>,
     receiver: Receiver<Msg>,
     knockers: knockers::Knockers,
+    doors: door::Doors,
 }
 
 impl WF {
-    pub fn wait_the_end(&self) {
+    pub fn wait_the_end(&mut self) {
         debug!("Wait for the end of the workflow");
-        let mut last_cleanup: Instant = Instant::now();
+        let mut last_knock_cleanup: Instant = Instant::now();
+        let mut last_doors_cleanup: Instant = Instant::now();
         loop {
             std::thread::sleep(Duration::from_millis(100));
             if !unsafe { THREAD_RUNNING.load(Ordering::Relaxed) } {
                 break;
             }
-            let time_since_last_clean_up: Duration = Instant::now() - last_cleanup;
-            if time_since_last_clean_up > knockers::MAX_KNOCKER_LIVE_TIME {
-                last_cleanup = Instant::now();
+            let time_since_last_knock_clean_up: Duration = Instant::now() - last_knock_cleanup;
+            if time_since_last_knock_clean_up > knockers::MAX_KNOCKER_LIVE_TIME {
+                last_knock_cleanup = Instant::now();
                 let _ = self.sender.send(Msg::CLEANUP);
+            }
+            let time_since_last_door_clean_up: Duration = Instant::now() - last_doors_cleanup;
+            if time_since_last_door_clean_up > door::CLEANUP_PERIODE {
+                last_doors_cleanup = Instant::now();
+                self.doors.cleanup();
             }
         }
     }
@@ -96,7 +104,7 @@ fn quit() {
 
 pub fn join() {
     unsafe {
-        match &MAIN_WF {
+        match &mut MAIN_WF {
             None => (),
             Some(wf) => wf.wait_the_end(),
         }
@@ -117,6 +125,15 @@ pub fn knock(k: knock::Knock) {
     };
 }
 
+pub fn open_the_door(ip: IpAddr){
+    unsafe {
+        match &mut MAIN_WF {
+            None => (),
+            Some(wf) => wf.doors.open_the_door(ip),
+        }
+    };
+}
+
 pub fn init() {
     debug!("Initializing the workflow.");
     let (s, r) = channel();
@@ -128,6 +145,7 @@ pub fn init() {
             sender: s,
             receiver: r,
             knockers: knockers::Knockers::new(),
+            doors: door::Doors::new(),
         };
         loop {
             if unsafe { WANT_TO_QUIT.load(Ordering::Relaxed) } {
