@@ -3,7 +3,6 @@
 //! TODO us a configuration file
 //!
 use crate::MAIN_ARGS;
-use log::debug;
 use regex::Regex;
 
 // struct Parameters{
