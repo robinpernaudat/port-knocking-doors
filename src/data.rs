@@ -4,6 +4,7 @@
 //!
 use crate::MAIN_ARGS;
 use regex::Regex;
+use log::{debug};
 
 // struct Parameters{
 
@@ -27,7 +28,7 @@ use regex::Regex;
  * Each number have from 1 to 5 digit.
  */
 fn match_port_liste() -> Regex {
-    Regex::new(r"^\d{1,5}(?:,\d{1,5}){1,20}$").unwrap()
+    Regex::new(r"^\d{1,5}(?:,\d{1,5}){0,20}$").unwrap()
 }
 
 /**
