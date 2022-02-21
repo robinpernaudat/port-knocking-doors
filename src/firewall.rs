@@ -28,11 +28,12 @@ static mut FIREWALL_TYPE: FirewallType = FirewallType::UNDEFINED;
 pub fn init() {
     info!("firewall identification");
     let cmd_exec = Command::new("bash")
+        .arg("-c")
         .arg("(which firewalld || which iptables || echo error) | sed 's/^.*\\///'")
         .output()
         .expect("failed to execute process");
     let whiche_one: String = String::from_utf8(cmd_exec.stdout).unwrap();
-    let wall = if whiche_one == "firewalld" {
+    let wall = if whiche_one == String::from("firewalld") {
         FirewallType::FIREWALLD
     }
     // else if whiche_one == "iptables"{
