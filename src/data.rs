@@ -21,6 +21,16 @@ use regex::Regex;
 // }
 
 /**
+ * regex matching the port list
+ *
+ * It's matching a list of 1 to 20 port.
+ * Each number have from 1 to 5 digit.
+ */
+fn match_port_liste() -> Regex {
+    Regex::new(r"^\d{1,5}(?:,\d{1,5}){1,20}$").unwrap()
+}
+
+/**
  * Get the list of port to manage
  *
  * try from the command line argument (--ports=1,2,3)
@@ -28,7 +38,7 @@ use regex::Regex;
  * else only the port tcp 22
  */
 fn ports_string() -> String {
-    let re_matching_ports_list = Regex::new(r"^\d{1,5}(?:,\d{1,5}){0,20}$").unwrap();
+    let re_matching_ports_list = match_port_liste();
 
     // treat arguments.
     let seq_from_args: crate::args::Args = unsafe { MAIN_ARGS.clone().unwrap().clone() };
@@ -55,6 +65,16 @@ pub fn ports() -> Vec<u16> {
 }
 
 /**
+ * regex matching the sequence list of ports
+ *
+ * It's matching a list of 4 to 20 numbers.
+ * Each number have from 1 to 5 digit.
+ */
+fn re_matching_sequence() -> Regex {
+    Regex::new(r"^\d{1,5}(?:,\d{1,5}){4,20}$").unwrap()
+}
+
+/**
  * Return the seq
  *
  * try to get the SEG from the cli argument
@@ -63,8 +83,7 @@ pub fn ports() -> Vec<u16> {
  *
  */
 fn knock_seq_string() -> String {
-    let re_matching_the_sequence: regex::Regex =
-        Regex::new(r"^\d{1,5}(?:,\d{1,5}){4,20}$").unwrap();
+    let re_matching_the_sequence: regex::Regex = re_matching_sequence();
     // treat arguments.
     let seq_from_args: crate::args::Args = unsafe { MAIN_ARGS.clone().unwrap().clone() };
     if re_matching_the_sequence.is_match(seq_from_args.magic_seq.as_str()) {
@@ -93,4 +112,23 @@ pub fn knock_seq() -> Vec<u16> {
 pub fn is_terminal() -> bool {
     use atty::Stream;
     return atty::is(Stream::Stdout);
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_match_port_liste() {
+        let r: Regex = match_port_liste();
+        assert!(r.is_match("1,2,3,5"));
+    }
+
+    #[test]
+    fn test_matching_sequence() {
+        let r: Regex = re_matching_sequence();
+        assert!(r.is_match("222,3,5,97,6546,7974,14,14,41,41,41"));
+        assert!(!r.is_match("54,,98,897,84,654,64,654,65,4654,e,2"));
+    }
 }

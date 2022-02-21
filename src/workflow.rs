@@ -61,7 +61,7 @@ impl WF {
             let time_since_last_firewall_checkup = Instant::now() - last_firwall_checkup;
             if time_since_last_firewall_checkup > firewall::RULES_CHECK_PERIODE {
                 last_firwall_checkup = Instant::now();
-                firewall::checkup();
+                firewall::checkup(false);
             }
         }
     }

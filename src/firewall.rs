@@ -26,7 +26,7 @@ static mut FIREWALL_TYPE: FirewallType = FirewallType::UNDEFINED;
 
 #[cfg(target_os = "linux")]
 pub fn init() {
-    // firewall identification
+    info!("firewall identification");
     let cmd_exec = Command::new("bash")
         .arg("(which firewalld || which iptables || echo error) | sed 's/^.*\\///'")
         .output()
@@ -35,17 +35,17 @@ pub fn init() {
     let wall = if whiche_one == "firewalld" {
         FirewallType::FIREWALLD
     }
-    /*else if whiche_one == "iptables"{
-        FirewallType::IPTABLES
-    }*/
+    // else if whiche_one == "iptables"{
+    //     FirewallType::IPTABLES
+    // }
     else if whiche_one == "error" {
         panic!("firewalld must be installed");
     } else {
-        panic!("OOOOOhhhhh");
+        panic!("Bad firewall : {}", whiche_one);
     };
     unsafe { FIREWALL_TYPE = wall };
 
-    checkup();
+    checkup(true);
 }
 
 #[cfg(target_os = "windows")]
@@ -54,30 +54,34 @@ pub fn init() {
 }
 
 pub fn open(ip: IpAddr) -> bool {
-    //firewall-cmd --zone=public --add-port=80/tcp
-    //--add-source=10.24.96.5/20
-    // voir l'histoire de zone.
-    let cmd = match unsafe { FIREWALL_TYPE.clone() } {
-        FirewallType::FIREWALLD => "firewall-cmd --zone=knock-access --add-source={}/32",
+    match unsafe { FIREWALL_TYPE.clone() } {
+        FirewallType::FIREWALLD => Command::new("firewall-cmd")
+            .arg("--zone=knock-access")
+            .arg(format!("--add-source={}/32", ip))
+            .output()
+            .expect("Can't add ip in white list."),
         //FirewallType::IPTABLES => "",
         _ => panic!("This app can't work if it can't control the firewall."),
     };
-    todo!();
+
     return false;
 }
 
 pub fn close(ip: IpAddr) -> bool {
-    //firewall-cmd --zone=public --remove-port=10050/tcp
-    let cmd = match unsafe { FIREWALL_TYPE.clone() } {
-        FirewallType::FIREWALLD => "firewall-cmd --zone=knock-access --remove-source={}/32",
+    match unsafe { FIREWALL_TYPE.clone() } {
+        FirewallType::FIREWALLD => Command::new("firewall-cmd")
+            .arg("--zone=knock-access")
+            .arg(format!("--remove-source={}/32", ip))
+            .output()
+            .expect("Can't remove ip in white list."),
         //FirewallType::IPTABLES => "",
         _ => panic!("This app can't work if it can't control the firewall."),
     };
-    todo!();
     return false;
 }
 
 fn is_firewall_zone_exists() -> bool {
+    info!("Checking if the firewall zone exists");
     let result = match unsafe { FIREWALL_TYPE.clone() } {
         FirewallType::FIREWALLD => Command::new("bash")
             .arg("firewall-cmd --list-all-zones | egrep \"^knock-access\"")
@@ -94,19 +98,33 @@ fn is_firewall_zone_exists() -> bool {
 }
 
 fn prepare_firewall_zone() {
+    info!("preparing the firewall zone");
     let _result = match unsafe { FIREWALL_TYPE.clone() } {
         FirewallType::FIREWALLD => Command::new("firewall-cmd")
             .arg("--new-zone=knock-access")
             .output()
-            .expect("error wil creating a zone"),
+            .expect("error while creating a zone"),
         //FirewallType::IPTABLES => Command::new("").output().expect("error wil creating a zone"),,
         _ => panic!("This app can't work if it can't control the firewall."),
     };
 }
 
-fn add_ports_list_to_the_firewall_zone(){
+fn drop_firewall_zone() {
+    info!("droping the firewall zone.");
+    let _result = match unsafe { FIREWALL_TYPE.clone() } {
+        FirewallType::FIREWALLD => Command::new("firewall-cmd")
+            .arg("--delete-zone=knock-access")
+            .output()
+            .expect("error while removing a zone"),
+        //FirewallType::IPTABLES => Command::new("").output().expect("error wil creating a zone"),,
+        _ => panic!("This app can't work if it can't control the firewall."),
+    };
+}
+
+fn add_ports_list_to_the_firewall_zone() {
+    info!("configuring the port of the firewall's zone.");
     let ports: Vec<u16> = data::ports();
-    for port in ports{
+    for port in ports {
         Command::new("firewall-cmd")
             .arg("--zone=knock-access")
             .arg(format!("--add-port={}/tcp", port))
@@ -115,9 +133,19 @@ fn add_ports_list_to_the_firewall_zone(){
     }
 }
 
-pub fn checkup() {
+/**
+ * it ensure the firewall configured.    
+ *
+ * If the zone doesn't exist it create it and set the port concerned.
+ * Else if @reset == true, it will recreate the zone. So if the daemon restarted, it will cleanup the zone.
+ */
+pub fn checkup(reset: bool) {
+    info!("firewall checkup");
     if !is_firewall_zone_exists() {
         prepare_firewall_zone();
         add_ports_list_to_the_firewall_zone();
+    } else if reset {
+        drop_firewall_zone();
+        checkup(false);
     }
 }
