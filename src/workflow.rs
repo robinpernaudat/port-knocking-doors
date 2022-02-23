@@ -138,20 +138,16 @@ pub fn join() {
 
 pub fn knock(k: knock::Knock) {
     debug!("konck on {} from {}", &k.port, &k.ip);
-    unsafe {
-        MAIN_WF.read().unwrap().send_msg(Msg::KNOCK(k));
-    };
+    MAIN_WF.read().unwrap().send_msg(Msg::KNOCK(k));
 }
 
 pub fn open_the_door(ip: IpAddr) {
-    unsafe {
-        MAIN_WF.write().unwrap().doors.open_the_door(ip);
-    };
+    MAIN_WF.write().unwrap().doors.open_the_door(ip);
 }
 
 pub fn init() {
     debug!("Initializing the workflow.");
-    let mut wf_ref_in_static: AtomicBool = AtomicBool::new(false);
+    let wf_ref_in_static: AtomicBool = AtomicBool::new(false);
     let _ = std::thread::spawn(move || {
         unsafe {
             THREAD_RUNNING = AtomicBool::new(true);
@@ -161,9 +157,7 @@ pub fn init() {
             if unsafe { WANT_TO_QUIT.load(Ordering::Relaxed) } {
                 break;
             }
-            unsafe {
-                MAIN_WF.write().unwrap().iterate();
-            };
+            MAIN_WF.write().unwrap().iterate();
         }
         unsafe {
             THREAD_RUNNING = AtomicBool::new(false);
