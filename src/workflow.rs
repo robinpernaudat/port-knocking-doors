@@ -48,6 +48,7 @@ impl Drop for WF {
 }
 
 fn new() -> WF {
+    debug!("Setup the MAIN_WF");
     let (s, r) = unbounded();
     WF {
         sender: s,
@@ -141,11 +142,11 @@ pub fn open_the_door(ip: IpAddr) {
 
 pub fn init() {
     debug!("Initializing the workflow.");
-    let wf_ref_in_static: AtomicBool = AtomicBool::new(false);
     let _ = std::thread::spawn(move || {
         unsafe {
             THREAD_RUNNING = AtomicBool::new(true);
         };
+        
 
         loop {
             if unsafe { WANT_TO_QUIT.load(Ordering::Relaxed) } {
@@ -157,7 +158,8 @@ pub fn init() {
             THREAD_RUNNING = AtomicBool::new(false);
         };
     });
-    while !wf_ref_in_static.load(Ordering::Relaxed) {
+    debug!("waitting for the workflow's thread running");
+    while !unsafe{THREAD_RUNNING.load(Ordering::Relaxed)} {
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 }
