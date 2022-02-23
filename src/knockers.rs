@@ -18,6 +18,7 @@ lazy_static! {
 /**
  * Defining a knocker. 
  */
+#[derive(Debug)]
 pub struct Knocker {
     pub next_step: usize,
     pub last_knock: Instant,
@@ -34,14 +35,17 @@ pub struct Knockers {
 
 impl Knockers {
     pub fn new() -> Knockers {
+        let ks = data::knock_seq();
+        debug!("knock_seq for knockers : {:?}", ks);
         Knockers {
             list: HashMap::new(),
-            sequence: data::knock_seq(),
+            sequence: ks,
         }
     }
 
     pub fn event(&mut self, k: knock::Knock) {
-        let sequence_size: usize = self.list.len();
+        let sequence_size: usize = self.sequence.len();
+        assert!(sequence_size > 0);
         match self.list.get_mut(&k.ip) {
             Some(existing_knocker) => {
                 if existing_knocker.error {
@@ -63,6 +67,7 @@ impl Knockers {
                 let aspected_port = self.sequence[existing_knocker.next_step];
                 existing_knocker.last_knock = k.when;
                 if aspected_port == k.port {
+                    //debug!("This knocker {:?} have finished the sequence.", k);
                     existing_knocker.next_step += 1;
                     existing_knocker.error = false;
                     if existing_knocker.next_step == sequence_size {
@@ -75,6 +80,7 @@ impl Knockers {
                 }
             }
             None => {
+                debug!("new knocker : {}", k.ip);
                 let new_knocker = Knocker {
                     next_step: 0,
                     error: false,
