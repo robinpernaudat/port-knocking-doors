@@ -125,13 +125,13 @@ impl WF {
 fn quit() {
     //unsafe {
         let m: Msg = Msg::QUIT;
-        MAIN_WF.send_msg(m);
+        MAIN_WF.read().unwrap().send_msg(m);
     //};
 }
 
 pub fn join() {
     //unsafe {
-    MAIN_WF.wait_the_end();
+    MAIN_WF.write().unwrap().wait_the_end();
     //};
     quit();
 }
@@ -139,13 +139,13 @@ pub fn join() {
 pub fn knock(k: knock::Knock) {
     debug!("konck on {} from {}", &k.port, &k.ip);
     unsafe {
-        MAIN_WF.send_msg(Msg::KNOCK(k));
+        MAIN_WF.read().unwrap().send_msg(Msg::KNOCK(k));
     };
 }
 
 pub fn open_the_door(ip: IpAddr) {
     unsafe {
-        MAIN_WF.doors.open_the_door(ip);
+        MAIN_WF.write().unwrap().doors.open_the_door(ip);
     };
 }
 
@@ -162,7 +162,7 @@ pub fn init() {
                 break;
             }
             unsafe {
-                MAIN_WF.iterate();
+                MAIN_WF.write().unwrap().iterate();
             };
         }
         unsafe {
