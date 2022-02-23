@@ -5,9 +5,15 @@ use log::debug;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::time::{Duration, Instant};
+use lazy_static::*;
+use mut_static::MutStatic;
 
 const IGNORING_TIME_AFTER_ERROR: Duration = Duration::from_secs(5);
 pub const MAX_KNOCKER_LIVE_TIME: Duration = Duration::from_secs(30);
+
+lazy_static! {
+    static ref MAIN_KNOCKERS: MutStatic<Knockers> = MutStatic::from(Knockers::new());
+}
 
 pub struct Knocker {
     pub next_step: usize,
@@ -94,3 +100,9 @@ impl Knockers {
         }
     }
 }
+
+pub fn event(k: knock::Knock) {
+    MAIN_KNOCKERS.write().unwrap().event(k);
+}
+
+pub fn clean_up() {MAIN_KNOCKERS.write().unwrap().clean_up();}

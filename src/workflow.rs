@@ -37,7 +37,6 @@ lazy_static! {
 pub struct WF {
     sender: Sender<Msg>,
     receiver: Receiver<Msg>,
-    knockers: knockers::Knockers,
 }
 
 impl Drop for WF {
@@ -52,7 +51,6 @@ fn new() -> WF {
     WF {
         sender: s,
         receiver: r,
-        knockers: knockers::Knockers::new(),
     }
 }
 
@@ -104,10 +102,10 @@ impl WF {
                 WANT_TO_QUIT = AtomicBool::new(true);
             },
             Msg::KNOCK(k) => {
-                self.knockers.event(k);
+                crate::knockers::event(k);
             }
             Msg::CLEANUP => {
-                self.knockers.clean_up();
+                crate::knockers::clean_up();
             }
         }
     }
