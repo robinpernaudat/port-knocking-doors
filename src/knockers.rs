@@ -15,12 +15,18 @@ lazy_static! {
     static ref MAIN_KNOCKERS: MutStatic<Knockers> = MutStatic::from(Knockers::new());
 }
 
+/**
+ * Defining a knocker. 
+ */
 pub struct Knocker {
     pub next_step: usize,
     pub last_knock: Instant,
     pub error: bool,
 }
 
+/**
+ * This store the list of recent knockers.
+ */
 pub struct Knockers {
     list: HashMap<IpAddr, Knocker>,
     sequence: Vec<u16>,
