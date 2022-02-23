@@ -38,7 +38,6 @@ pub struct WF {
     sender: Sender<Msg>,
     receiver: Receiver<Msg>,
     knockers: knockers::Knockers,
-    doors: door::Doors,
 }
 
 impl Drop for WF {
@@ -54,21 +53,18 @@ fn new() -> WF {
         sender: s,
         receiver: r,
         knockers: knockers::Knockers::new(),
-        doors: door::Doors::new(),
     }
 }
 
 impl WF {
-    pub fn wait_the_end(&mut self) {
+    pub fn wait_the_end(& self) {
         debug!("Wait for the end of the workflow");
         let mut last_knock_cleanup: Instant = Instant::now();
         let mut last_doors_cleanup: Instant = Instant::now();
         let mut last_firwall_checkup: Instant = Instant::now();
-        loop {
+        while unsafe { THREAD_RUNNING.load(Ordering::Relaxed) } {
             std::thread::sleep(Duration::from_millis(100));
-            if !unsafe { THREAD_RUNNING.load(Ordering::Relaxed) } {
-                break;
-            }
+
             let time_since_last_knock_clean_up: Duration = Instant::now() - last_knock_cleanup;
             if time_since_last_knock_clean_up > knockers::MAX_KNOCKER_LIVE_TIME {
                 last_knock_cleanup = Instant::now();
@@ -77,7 +73,7 @@ impl WF {
             let time_since_last_door_clean_up: Duration = Instant::now() - last_doors_cleanup;
             if time_since_last_door_clean_up > door::CLEANUP_PERIODE {
                 last_doors_cleanup = Instant::now();
-                self.doors.cleanup();
+                crate::door::cleanup();
             }
 
             let time_since_last_firewall_checkup = Instant::now() - last_firwall_checkup;
@@ -137,7 +133,7 @@ pub fn knock(k: knock::Knock) {
 }
 
 pub fn open_the_door(ip: IpAddr) {
-    MAIN_WF.write().unwrap().doors.open_the_door(ip);
+    crate::door::open_the_door(ip);
 }
 
 pub fn init() {
