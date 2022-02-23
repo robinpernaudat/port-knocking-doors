@@ -25,7 +25,6 @@ use crate::{door, firewall, knock, knockers};
 pub enum Msg {
     KNOCK(knock::Knock),
     QUIT,
-    CLEANUP,
 }
 
 static mut WANT_TO_QUIT: AtomicBool = AtomicBool::new(false);
@@ -66,12 +65,12 @@ impl WF {
             let time_since_last_knock_clean_up: Duration = Instant::now() - last_knock_cleanup;
             if time_since_last_knock_clean_up > knockers::MAX_KNOCKER_LIVE_TIME {
                 last_knock_cleanup = Instant::now();
-                let _ = self.sender.send(Msg::CLEANUP);
+                knockers::clean_up();
             }
             let time_since_last_door_clean_up: Duration = Instant::now() - last_doors_cleanup;
             if time_since_last_door_clean_up > door::CLEANUP_PERIODE {
                 last_doors_cleanup = Instant::now();
-                crate::door::cleanup();
+                door::cleanup();
             }
 
             let time_since_last_firewall_checkup = Instant::now() - last_firwall_checkup;
@@ -103,9 +102,6 @@ impl WF {
             },
             Msg::KNOCK(k) => {
                 crate::knockers::event(k);
-            }
-            Msg::CLEANUP => {
-                crate::knockers::clean_up();
             }
         }
     }

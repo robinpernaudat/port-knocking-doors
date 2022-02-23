@@ -100,6 +100,7 @@ impl Knockers {
     ///
     /// after a duration of MAX_KNOCKER_LIVE_TIME since the last knock, a knocker is removed from the list
     pub fn clean_up(&mut self) {
+        debug!("cleanup des knockers");
         let mut to_be_deleted: Vec<IpAddr> = Vec::new();
         for (ip, knocker) in &self.list {
             let duration_since_last_knock = Instant::now() - knocker.last_knock;
