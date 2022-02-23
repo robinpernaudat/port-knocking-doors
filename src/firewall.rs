@@ -97,6 +97,7 @@ fn is_firewall_zone_exists() -> bool {
     if s == String::from("knock-access\n") {
         return true;
     }
+    debug!("firewall zone not found it responded : {}", s);
     false
 }
 

@@ -103,6 +103,7 @@ pub async fn init() {
         });
         debug!("port configured");
     }
+    debug!("door configured");
 }
 
 pub fn cleanup() {

@@ -117,12 +117,13 @@ fn quit() {
 }
 
 pub fn join() {
-    MAIN_WF.write().unwrap().wait_the_end();
+    debug!("joinning the workflow thread");
+    MAIN_WF.read().unwrap().wait_the_end();
     quit();
 }
 
 pub fn knock(k: knock::Knock) {
-    debug!("konck on {} from {}", &k.port, &k.ip);
+    debug!("knock on {} from {}", &k.port, &k.ip);
     MAIN_WF.read().unwrap().send_msg(Msg::KNOCK(k));
 }
 
