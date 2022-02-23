@@ -16,7 +16,7 @@ lazy_static! {
 }
 
 /**
- * Defining a knocker. 
+ * Defining a knocker.
  */
 #[derive(Debug)]
 pub struct Knocker {
