@@ -10,11 +10,15 @@
 //! - conf firewalld, iptables if Linux
 //! - conf Windows firewall if windows
 
-use log::{debug, error};
+use log::{debug, error, info};
 use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender}; //one sender in this channel
+use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender}; //one sender in this channel
 use std::time::{Duration, Instant};
+
+//#[macro_use]
+use lazy_static::*;
+use mut_static::MutStatic;
 
 use crate::{door, firewall, knock, knockers};
 
@@ -27,8 +31,9 @@ pub enum Msg {
 static mut WANT_TO_QUIT: AtomicBool = AtomicBool::new(false);
 static mut THREAD_RUNNING: AtomicBool = AtomicBool::new(false);
 
-static mut MAIN_WF: Option<WF> = None;
-
+lazy_static! {
+    static ref MAIN_WF: MutStatic<WF> = MutStatic::from(new());
+}
 pub struct WF {
     sender: Sender<Msg>,
     receiver: Receiver<Msg>,
@@ -36,7 +41,25 @@ pub struct WF {
     doors: door::Doors,
 }
 
+impl Drop for WF {
+    fn drop(&mut self) {
+        info!("END of the workflow");
+    }
+}
+
+fn new()->WF{
+    let (s, r) = unbounded();
+    WF{
+        sender: s,
+        receiver: r,
+        knockers: knockers::Knockers::new(),
+        doors: door::Doors::new(),
+    }
+}
+
 impl WF {
+    
+
     pub fn wait_the_end(&mut self) {
         debug!("Wait for the end of the workflow");
         let mut last_knock_cleanup: Instant = Instant::now();
@@ -100,70 +123,53 @@ impl WF {
 }
 
 fn quit() {
-    unsafe {
-        match &MAIN_WF {
-            None => (),
-            Some(wf) => {
-                let m: Msg = Msg::QUIT;
-                wf.send_msg(m);
-            }
-        }
-    };
+    //unsafe {
+        let m: Msg = Msg::QUIT;
+        MAIN_WF.send_msg(m);
+    //};
 }
 
 pub fn join() {
-    unsafe {
-        match &mut MAIN_WF {
-            None => (),
-            Some(wf) => wf.wait_the_end(),
-        }
-    };
+    //unsafe {
+    MAIN_WF.wait_the_end();
+    //};
     quit();
 }
 
 pub fn knock(k: knock::Knock) {
     debug!("konck on {} from {}", &k.port, &k.ip);
     unsafe {
-        match &MAIN_WF {
-            None => (),
-            Some(wf) => {
-                let m: Msg = Msg::KNOCK(k);
-                wf.send_msg(m);
-            }
-        }
+        MAIN_WF.send_msg(Msg::KNOCK(k));
     };
 }
 
 pub fn open_the_door(ip: IpAddr) {
     unsafe {
-        match &mut MAIN_WF {
-            None => (),
-            Some(wf) => wf.doors.open_the_door(ip),
-        }
+        MAIN_WF.doors.open_the_door(ip);
     };
 }
 
 pub fn init() {
     debug!("Initializing the workflow.");
-    let (s, r) = channel();
+    let mut wf_ref_in_static: AtomicBool = AtomicBool::new(false);
     let _ = std::thread::spawn(move || {
         unsafe {
             THREAD_RUNNING = AtomicBool::new(true);
         };
-        let mut wf = WF {
-            sender: s,
-            receiver: r,
-            knockers: knockers::Knockers::new(),
-            doors: door::Doors::new(),
-        };
+        
         loop {
             if unsafe { WANT_TO_QUIT.load(Ordering::Relaxed) } {
                 break;
             }
-            wf.iterate();
+            unsafe {
+                MAIN_WF.iterate();
+            };
         }
         unsafe {
             THREAD_RUNNING = AtomicBool::new(false);
         };
     });
+    while !wf_ref_in_static.load(Ordering::Relaxed) {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
 }

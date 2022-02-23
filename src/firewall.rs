@@ -55,6 +55,7 @@ pub fn init() {
 }
 
 pub fn open(ip: IpAddr) -> bool {
+    debug!("opening the zone for the ip {}", ip);
     match unsafe { FIREWALL_TYPE.clone() } {
         FirewallType::FIREWALLD => Command::new("firewall-cmd")
             .arg("--zone=knock-access")

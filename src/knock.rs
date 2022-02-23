@@ -2,6 +2,7 @@
 
 use std::net::IpAddr;
 use std::time::Instant;
+use log::debug;
 
 pub struct Knock {
     pub ip: IpAddr,
@@ -11,6 +12,7 @@ pub struct Knock {
 
 impl Knock {
     pub fn new(ip: IpAddr, port: u16) -> Knock {
+        debug!("Knock {} : {}", ip, port);
         Knock {
             ip,
             port,
