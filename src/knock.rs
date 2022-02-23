@@ -1,8 +1,8 @@
 //! In this Module we implement the concept of knock.
 
+use log::debug;
 use std::net::IpAddr;
 use std::time::Instant;
-use log::debug;
 
 pub struct Knock {
     pub ip: IpAddr,

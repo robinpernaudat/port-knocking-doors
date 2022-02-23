@@ -5,7 +5,7 @@
 //! The zone and rules aren't permenent. So il the firewall is restarted, the zone will be create again
 //! and the clients have to réopen there ports.
 
-use log::{info, debug};
+use log::{debug, info};
 use std::net::IpAddr;
 use std::process::Command;
 use std::time::Duration;
@@ -112,7 +112,11 @@ fn prepare_firewall_zone() {
         _ => panic!("This app can't work if it can't control the firewall."),
     };
     firewall_cmd_reload();
-    debug!("returned : {}  |  {}", String::from_utf8(result.stdout).unwrap(), String::from_utf8(result.stderr).unwrap());
+    debug!(
+        "returned : {}  |  {}",
+        String::from_utf8(result.stdout).unwrap(),
+        String::from_utf8(result.stderr).unwrap()
+    );
 }
 
 fn drop_firewall_zone() {
@@ -129,7 +133,7 @@ fn drop_firewall_zone() {
     firewall_cmd_reload();
 }
 
-fn firewall_cmd_reload(){
+fn firewall_cmd_reload() {
     info!("reloading the firewall conf");
     let _result = match unsafe { FIREWALL_TYPE.clone() } {
         FirewallType::FIREWALLD => Command::new("firewall-cmd")
@@ -140,7 +144,6 @@ fn firewall_cmd_reload(){
         _ => panic!("This app can't work if it can't control the firewall."),
     };
 }
-
 
 fn add_ports_list_to_the_firewall_zone() {
     info!("configuring the port of the firewall's zone.");

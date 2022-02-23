@@ -10,10 +10,10 @@
 //! - conf firewalld, iptables if Linux
 //! - conf Windows firewall if windows
 
+use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender}; //one sender in this channel
 use log::{debug, error, info};
 use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
-use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender}; //one sender in this channel
 use std::time::{Duration, Instant};
 
 //#[macro_use]
@@ -47,9 +47,9 @@ impl Drop for WF {
     }
 }
 
-fn new()->WF{
+fn new() -> WF {
     let (s, r) = unbounded();
-    WF{
+    WF {
         sender: s,
         receiver: r,
         knockers: knockers::Knockers::new(),
@@ -58,8 +58,6 @@ fn new()->WF{
 }
 
 impl WF {
-    
-
     pub fn wait_the_end(&mut self) {
         debug!("Wait for the end of the workflow");
         let mut last_knock_cleanup: Instant = Instant::now();
@@ -123,16 +121,12 @@ impl WF {
 }
 
 fn quit() {
-    //unsafe {
-        let m: Msg = Msg::QUIT;
-        MAIN_WF.read().unwrap().send_msg(m);
-    //};
+    let m: Msg = Msg::QUIT;
+    MAIN_WF.read().unwrap().send_msg(m);
 }
 
 pub fn join() {
-    //unsafe {
     MAIN_WF.write().unwrap().wait_the_end();
-    //};
     quit();
 }
 
@@ -152,7 +146,7 @@ pub fn init() {
         unsafe {
             THREAD_RUNNING = AtomicBool::new(true);
         };
-        
+
         loop {
             if unsafe { WANT_TO_QUIT.load(Ordering::Relaxed) } {
                 break;
