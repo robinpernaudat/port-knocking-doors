@@ -1,21 +1,20 @@
 //! This module manage the knocking doors.
 //!
 //! This start listening on UDP ports for knocking.
-use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::{Duration, Instant};
 use crate::{data, firewall, knock, workflow};
-use log::debug;
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use lazy_static::*;
+use log::debug;
 use mut_static::MutStatic;
+use std::collections::HashMap;
+use std::net::{IpAddr, SocketAddr, UdpSocket};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::{Duration, Instant};
 
 static mut THREAD_COUNT: AtomicUsize = AtomicUsize::new(0);
 static mut SOCKETS_ADDR: Vec<SocketAddr> = Vec::new();
 
 pub const MAX_OPENED_DURATION: Duration = Duration::from_secs(10);
 pub const CLEANUP_PERIODE: Duration = Duration::from_secs(10);
-
 
 lazy_static! {
     static ref MAIN_DOORS: MutStatic<Doors> = MutStatic::from(Doors::new());
@@ -106,7 +105,7 @@ pub async fn init() {
     }
 }
 
-pub fn cleanup(){
+pub fn cleanup() {
     MAIN_DOORS.write().unwrap().cleanup();
 }
 

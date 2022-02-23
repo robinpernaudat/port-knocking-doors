@@ -55,7 +55,7 @@ fn new() -> WF {
 }
 
 impl WF {
-    pub fn wait_the_end(& self) {
+    pub fn wait_the_end(&self) {
         debug!("Wait for the end of the workflow");
         let mut last_knock_cleanup: Instant = Instant::now();
         let mut last_doors_cleanup: Instant = Instant::now();
@@ -140,7 +140,6 @@ pub fn init() {
         unsafe {
             THREAD_RUNNING = AtomicBool::new(true);
         };
-        
 
         loop {
             if unsafe { WANT_TO_QUIT.load(Ordering::Relaxed) } {
@@ -153,7 +152,7 @@ pub fn init() {
         };
     });
     debug!("waitting for the workflow's thread running");
-    while !unsafe{THREAD_RUNNING.load(Ordering::Relaxed)} {
+    while !unsafe { THREAD_RUNNING.load(Ordering::Relaxed) } {
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 }
