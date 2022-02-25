@@ -66,7 +66,7 @@ pub fn open(ip: IpAddr) -> bool {
         _ => panic!("This app can't work if it can't control the firewall."),
     };
 
-    return false;
+    return true;
 }
 
 pub fn close(ip: IpAddr) -> bool {
@@ -79,11 +79,14 @@ pub fn close(ip: IpAddr) -> bool {
         //FirewallType::IPTABLES => "",
         _ => panic!("This app can't work if it can't control the firewall."),
     };
-    return false;
+    return true;
 }
+
+
 
 fn is_firewall_zone_exists() -> bool {
     info!("Checking if the firewall zone exists");
+    let regex_for_zone_name_detection: regex::Regex = regex::Regex::new("^knock-access.*").unwrap();
     let result = match unsafe { FIREWALL_TYPE.clone() } {
         FirewallType::FIREWALLD => Command::new("bash")
             .arg("-c")
@@ -94,7 +97,8 @@ fn is_firewall_zone_exists() -> bool {
         _ => panic!("This app can't work if it can't control the firewall."),
     };
     let s: String = String::from_utf8(result.stdout).unwrap();
-    if s == String::from("knock-access\n") {
+
+    if regex_for_zone_name_detection.is_match(s.as_str()) {
         return true;
     }
     debug!("firewall zone not found it responded : {}", s);
