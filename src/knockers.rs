@@ -1,9 +1,7 @@
 //! Knockers are client who knock.
 
 use crate::{data, knock, workflow};
-use lazy_static::*;
 use log::debug;
-use mut_static::MutStatic;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::time::{Duration, Instant};
@@ -11,9 +9,8 @@ use std::time::{Duration, Instant};
 const IGNORING_TIME_AFTER_ERROR: Duration = Duration::from_secs(5);
 pub const MAX_KNOCKER_LIVE_TIME: Duration = Duration::from_secs(30);
 
-lazy_static! {
-    static ref MAIN_KNOCKERS: MutStatic<Knockers> = MutStatic::from(Knockers::new());
-}
+
+static mut MAIN_KNOCKERS: Option<Knockers> = None;
 
 /**
  * Defining a knocker.
@@ -34,13 +31,13 @@ pub struct Knockers {
 }
 
 impl Knockers {
-    pub fn new() -> Knockers {
+    pub fn init() {
         let ks = data::knock_seq();
         debug!("knock_seq for knockers : {:?}", ks);
-        Knockers {
+        unsafe{ MAIN_KNOCKERS = Some(Knockers {
             list: HashMap::new(),
             sequence: ks,
-        }
+        });}
     }
 
     pub fn event(&mut self, k: knock::Knock) {
@@ -67,7 +64,7 @@ impl Knockers {
                 let aspected_port = self.sequence[existing_knocker.next_step];
                 existing_knocker.last_knock = k.when;
                 if aspected_port == k.port {
-                    //debug!("This knocker {:?} have finished the sequence.", k);
+                    debug!("This knocker {:?} have finished the sequence.", k);
                     existing_knocker.next_step += 1;
                     existing_knocker.error = false;
                     if existing_knocker.next_step == sequence_size {
@@ -115,9 +112,9 @@ impl Knockers {
 }
 
 pub fn event(k: knock::Knock) {
-    MAIN_KNOCKERS.write().unwrap().event(k);
+    MAIN_KNOCKERS.unwrap().event(k);
 }
 
 pub fn clean_up() {
-    MAIN_KNOCKERS.write().unwrap().clean_up();
+    MAIN_KNOCKERS.unwrap().clean_up();
 }

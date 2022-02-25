@@ -10,50 +10,55 @@
 //! - conf firewalld, iptables if Linux
 //! - conf Windows firewall if windows
 
-use crossbeam_channel::{unbounded, Receiver, RecvTimeoutError, Sender}; //one sender in this channel
+use crossbeam_channel::{bounded, Receiver, RecvTimeoutError, Sender}; //one sender in this channel
 use log::{debug, error, info};
 use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-//#[macro_use]
-use lazy_static::*;
-use mut_static::MutStatic;
 
 use crate::{door, firewall, knock, knockers};
 
+#[derive(PartialEq, Eq, Debug)]
 pub enum Msg {
     KNOCK(knock::Knock),
+    //ITERATE,
     QUIT,
 }
 
 static mut WANT_TO_QUIT: AtomicBool = AtomicBool::new(false);
 static mut THREAD_RUNNING: AtomicBool = AtomicBool::new(false);
 
-lazy_static! {
+/*lazy_static! {
     static ref MAIN_WF: MutStatic<WF> = MutStatic::from(new());
-}
-pub struct WF {
-    sender: Sender<Msg>,
-    receiver: Receiver<Msg>,
+}*/
+
+static mut G_WF_com: WFComT = WFComT {
+    sender: None,
+    receiver: None,
+};
+
+pub struct WFComT {
+    sender: Option<Sender<Msg>>,
+    receiver: Option<Receiver<Msg>>,
 }
 
-impl Drop for WF {
+impl Drop for WFComT {
     fn drop(&mut self) {
         info!("END of the workflow");
     }
 }
 
-fn new() -> WF {
+fn new() -> WFComT {
     debug!("Setup the MAIN_WF");
-    let (s, r) = unbounded();
-    WF {
-        sender: s,
-        receiver: r,
+    let (s, r) = bounded(50);
+    WFComT {
+        sender: Some(s),
+        receiver: Some(r),
     }
 }
 
-impl WF {
+impl WFComT {
     pub fn wait_the_end(&self) {
         debug!("Wait for the end of the workflow");
         let mut last_knock_cleanup: Instant = Instant::now();
@@ -88,14 +93,20 @@ impl WF {
      * When a message on @receiver is there, it's treated and then the function return.
      */
     fn iterate(&mut self) {
-        match self.receiver.recv_timeout(Duration::from_secs(1)) {
+        //debug!(".");
+        match self.receiver.unwrap().recv_timeout(Duration::from_secs(1)) {
             Ok(msg) => self.treat_message(msg),
-            Err(RecvTimeoutError::Timeout) => (),
+            Err(RecvTimeoutError::Timeout) => {
+                /*debug!("timeout");*/
+                ()
+            }
             Err(e) => error!("Something wrong in the workflow iterate function : {}", e),
         }
+        //debug!("#");
     }
 
     fn treat_message(&mut self, m: Msg) {
+        //debug!("treat the message {:?}", m);
         match m {
             Msg::QUIT => unsafe {
                 WANT_TO_QUIT = AtomicBool::new(true);
@@ -103,28 +114,37 @@ impl WF {
             Msg::KNOCK(k) => {
                 crate::knockers::event(k);
             }
+            //Msg::ITERATE => {self.iterate()},
         }
     }
 
     fn send_msg(&self, msg: Msg) {
-        let _ = self.sender.send(msg);
+        //debug!("sending the message {:?}", msg);
+        assert_eq!(&self.sender.unwrap().send(msg), Ok(()));
     }
 }
 
 fn quit() {
     let m: Msg = Msg::QUIT;
-    MAIN_WF.read().unwrap().send_msg(m);
+    unsafe {
+        G_WF_com.send_msg(m);
+    }
 }
 
 pub fn join() {
     debug!("joinning the workflow thread");
-    MAIN_WF.read().unwrap().wait_the_end();
+    unsafe {
+        G_WF_com.wait_the_end();
+    };
     quit();
 }
 
 pub fn knock(k: knock::Knock) {
     debug!("knock on {} from {}", &k.port, &k.ip);
-    MAIN_WF.read().unwrap().send_msg(Msg::KNOCK(k));
+    let m = Msg::KNOCK(k);
+    unsafe {
+        G_WF_com.send_msg(m);
+    }
 }
 
 pub fn open_the_door(ip: IpAddr) {
@@ -133,7 +153,10 @@ pub fn open_the_door(ip: IpAddr) {
 
 pub fn init() {
     debug!("Initializing the workflow.");
-    let _ = std::thread::spawn(move || {
+    unsafe {
+        G_WF_com = new();
+    };
+    std::thread::spawn(move || {
         unsafe {
             THREAD_RUNNING = AtomicBool::new(true);
         };
@@ -142,14 +165,16 @@ pub fn init() {
             if unsafe { WANT_TO_QUIT.load(Ordering::Relaxed) } {
                 break;
             }
-            MAIN_WF.write().unwrap().iterate();
+            unsafe {
+                G_WF_com.iterate();
+            }; //(Msg::ITERATE);
         }
         unsafe {
             THREAD_RUNNING = AtomicBool::new(false);
         };
     });
-    debug!("waitting for the workflow's thread running");
     while !unsafe { THREAD_RUNNING.load(Ordering::Relaxed) } {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
+    debug!("workflow fully initialized");
 }

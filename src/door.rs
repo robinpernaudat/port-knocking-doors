@@ -2,9 +2,7 @@
 //!
 //! This start listening on UDP ports for knocking.
 use crate::{data, firewall, knock, workflow};
-use lazy_static::*;
 use log::debug;
-use mut_static::MutStatic;
 use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -16,9 +14,7 @@ static mut SOCKETS_ADDR: Vec<SocketAddr> = Vec::new();
 pub const MAX_OPENED_DURATION: Duration = Duration::from_secs(10);
 pub const CLEANUP_PERIODE: Duration = Duration::from_secs(10);
 
-lazy_static! {
-    static ref MAIN_DOORS: MutStatic<Doors> = MutStatic::from(Doors::new());
-}
+static mut MAIN_DOORS: Option<Doors> = None;
 
 pub struct Door {
     pub ip: IpAddr,
@@ -107,9 +103,9 @@ pub async fn init() {
 }
 
 pub fn cleanup() {
-    MAIN_DOORS.write().unwrap().cleanup();
+    MAIN_DOORS.unwrap().cleanup();
 }
 
 pub fn open_the_door(ip: IpAddr) {
-    MAIN_DOORS.write().unwrap().open_the_door(ip);
+    MAIN_DOORS.unwrap().open_the_door(ip);
 }

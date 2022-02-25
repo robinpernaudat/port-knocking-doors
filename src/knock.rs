@@ -4,7 +4,7 @@ use log::debug;
 use std::net::IpAddr;
 use std::time::Instant;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Knock {
     pub ip: IpAddr,
     pub port: u16,

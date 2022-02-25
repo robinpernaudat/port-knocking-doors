@@ -13,6 +13,5 @@ tokio = { version = "1", features = ["full"] }
 envmnt = "0.9.1"
 clap = { version = "3.0", features = ["derive"] }
 regex = "1"
-lazy_static = "1.4.0"
 crossbeam-channel = "0.5.2"
-mut_static = "5.0.0"
+
