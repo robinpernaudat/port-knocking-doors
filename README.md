@@ -18,6 +18,8 @@ The router of the internet connection redirects UDP ports to our server (it coul
 
 The daemon listens to the concerned UDP ports looking for the sequence. It checks the firewall of the server and opens the port for the client (for the client IP only).
 
+This program works together with Firewalld. So it is supposed to work under Linux. It's up to the user to run it in the background or to do what is needed with systemd or another scheduler.
+
 # Usage
 ## help message
 ```text
