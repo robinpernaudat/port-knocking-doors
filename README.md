@@ -46,6 +46,13 @@ You can also use the environnement variables:
 
 These two variables are only used in the absence of the argument concerned in the command line.
 
+## the datagram
+This client must send the following message, via UDP, on each port of the knocking sequence.
+```
+knock\n
+```
+
+
 # history
 |when|what|
 |-|-|
