@@ -47,5 +47,5 @@ These two variables are only used in the absence of the argument concerned in th
 # history
 |when|what|
 |-|-|
-|2020-02-25 | v 1.0.0 |
+|2022-02-25 | v 1.0.0 |
 |2022-02-11 | This repo is just started. Not buildable yet ! |
