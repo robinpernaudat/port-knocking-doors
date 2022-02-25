@@ -26,8 +26,9 @@ pub struct Doors {
 }
 
 impl Doors {
-    pub fn new() -> Doors {
-        Doors { l: HashMap::new() }
+    pub fn new() {
+        unsafe{MAIN_DOORS=Some(Doors { l: HashMap::new() });};
+        
     }
     pub fn cleanup(&mut self) {
         debug!("doors cleanning up");
@@ -66,7 +67,7 @@ impl Doors {
 
 pub async fn init() {
     debug!("Initializing the door");
-
+    Doors::new();
     let ports = data::knock_seq();
     for port in ports {
         let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
@@ -103,9 +104,16 @@ pub async fn init() {
 }
 
 pub fn cleanup() {
-    MAIN_DOORS.unwrap().cleanup();
+    unsafe {
+        MAIN_DOORS.as_mut().unwrap().cleanup();
+    }
 }
 
 pub fn open_the_door(ip: IpAddr) {
-    MAIN_DOORS.unwrap().open_the_door(ip);
+    unsafe {
+        match MAIN_DOORS.as_mut() {
+            None => (),
+            Some(d) => (*d).open_the_door(ip),
+        }
+    }
 }

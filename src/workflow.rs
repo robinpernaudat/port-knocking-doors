@@ -16,7 +16,6 @@ use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-
 use crate::{door, firewall, knock, knockers};
 
 #[derive(PartialEq, Eq, Debug)]
@@ -33,11 +32,12 @@ static mut THREAD_RUNNING: AtomicBool = AtomicBool::new(false);
     static ref MAIN_WF: MutStatic<WF> = MutStatic::from(new());
 }*/
 
-static mut G_WF_com: WFComT = WFComT {
+static mut G_WF_COM: WFComT = WFComT {
     sender: None,
     receiver: None,
 };
 
+#[derive(Clone)]
 pub struct WFComT {
     sender: Option<Sender<Msg>>,
     receiver: Option<Receiver<Msg>>,
@@ -94,7 +94,12 @@ impl WFComT {
      */
     fn iterate(&mut self) {
         //debug!(".");
-        match self.receiver.unwrap().recv_timeout(Duration::from_secs(1)) {
+        match self
+            .receiver
+            .clone()
+            .unwrap()
+            .recv_timeout(Duration::from_secs(1))
+        {
             Ok(msg) => self.treat_message(msg),
             Err(RecvTimeoutError::Timeout) => {
                 /*debug!("timeout");*/
@@ -113,28 +118,27 @@ impl WFComT {
             },
             Msg::KNOCK(k) => {
                 crate::knockers::event(k);
-            }
-            //Msg::ITERATE => {self.iterate()},
+            } //Msg::ITERATE => {self.iterate()},
         }
     }
 
-    fn send_msg(&self, msg: Msg) {
+    fn send_msg(&mut self, msg: Msg) {
         //debug!("sending the message {:?}", msg);
-        assert_eq!(&self.sender.unwrap().send(msg), Ok(()));
+        let _ = self.sender.clone().unwrap().send(msg);
     }
 }
 
 fn quit() {
     let m: Msg = Msg::QUIT;
     unsafe {
-        G_WF_com.send_msg(m);
+        G_WF_COM.send_msg(m);
     }
 }
 
 pub fn join() {
     debug!("joinning the workflow thread");
     unsafe {
-        G_WF_com.wait_the_end();
+        G_WF_COM.wait_the_end();
     };
     quit();
 }
@@ -143,7 +147,7 @@ pub fn knock(k: knock::Knock) {
     debug!("knock on {} from {}", &k.port, &k.ip);
     let m = Msg::KNOCK(k);
     unsafe {
-        G_WF_com.send_msg(m);
+        G_WF_COM.send_msg(m);
     }
 }
 
@@ -154,7 +158,7 @@ pub fn open_the_door(ip: IpAddr) {
 pub fn init() {
     debug!("Initializing the workflow.");
     unsafe {
-        G_WF_com = new();
+        G_WF_COM = new();
     };
     std::thread::spawn(move || {
         unsafe {
@@ -166,7 +170,7 @@ pub fn init() {
                 break;
             }
             unsafe {
-                G_WF_com.iterate();
+                G_WF_COM.iterate();
             }; //(Msg::ITERATE);
         }
         unsafe {
