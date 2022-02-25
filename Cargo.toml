@@ -3,6 +3,9 @@ name = "port-knocking-doors"
 version = "1.0.0"
 authors = ["robin.pernaudat@gmail.com"]
 edition = "2021"
+license = "GPL-3.0-only"
+description = "This a port knocking doors. It work with firewalld on Linux servers."
+repository = "https://github.com/robinpernaudat/port-knocking-doors"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
