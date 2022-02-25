@@ -25,19 +25,29 @@ impl log::Log for SimpleLogger {
 
     fn flush(&self) {}
 }
-use log::{LevelFilter, SetLoggerError};
 
-static LOGGER: SimpleLogger = SimpleLogger;
-
-pub fn init_log() -> Result<(), SetLoggerError> {
-    log::set_logger(&LOGGER).map(|()| log::set_max_level(LevelFilter::Debug))
+#[cfg(debug_assertions)]
+pub fn init_log()  {
+    let env = env_logger::Env::default()
+    .filter_or("MY_LOG_LEVEL", "debug")
+    .write_style_or("MY_LOG_STYLE", "always");
+    env_logger::init_from_env(env);
 }
+#[cfg(not(debug_assertions))]
+pub fn init_log()  {
+    let env = env_logger::Env::default()
+    .filter_or("MY_LOG_LEVEL", "info")
+    .write_style_or("MY_LOG_STYLE", "always");
+    env_logger::init_from_env(env);
+}
+
 
 static mut MAIN_ARGS: Option<args::Args> = None;
 
 #[tokio::main]
 async fn main() {
-    let _ = init_log();
+    
+    init_log();
     unsafe {
         MAIN_ARGS = Some(args::parse());
     }

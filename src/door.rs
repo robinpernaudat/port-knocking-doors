@@ -2,7 +2,7 @@
 //!
 //! This start listening on UDP ports for knocking.
 use crate::{data, firewall, knock, workflow};
-use log::debug;
+use log::{debug, info};
 use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -42,7 +42,7 @@ impl Doors {
         idx_of_door_to_be_deleted.reverse(); //to put the higher index first
 
         while let Some(ip) = idx_of_door_to_be_deleted.pop() {
-            debug!("closing ports for {}", &ip);
+            info!("closing the door to {}", &ip);
             if firewall::close(ip) {
                 self.l.remove(&ip);
             }
@@ -54,10 +54,10 @@ impl Doors {
             opened_instant: Instant::now(),
         };
         if let Some(d) = self.l.get_mut(&ip) {
-            debug!("ports stay opened for {}", &ip);
+            debug!("ports stay opened to {}", &ip);
             d.opened_instant = Instant::now();
         } else {
-            debug!("ports are opened for {}", &ip);
+            info!("opening the door to {}", &ip);
             if firewall::open(ip) {
                 self.l.insert(ip, door);
             }

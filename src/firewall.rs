@@ -85,7 +85,7 @@ pub fn close(ip: IpAddr) -> bool {
 
 
 fn is_firewall_zone_exists() -> bool {
-    info!("Checking if the firewall zone exists");
+    debug!("Checking if the firewall zone exists");
     let regex_for_zone_name_detection: regex::Regex = regex::Regex::new("^knock-access.*").unwrap();
     let result = match unsafe { FIREWALL_TYPE.clone() } {
         FirewallType::FIREWALLD => Command::new("bash")
@@ -169,7 +169,7 @@ fn add_ports_list_to_the_firewall_zone() {
  * Else if @reset == true, it will recreate the zone. So if the daemon restarted, it will cleanup the zone.
  */
 pub fn checkup(reset: bool) {
-    info!("firewall checkup");
+    debug!("firewall checkup");
     if !is_firewall_zone_exists() {
         debug!("the firewall zone doesn't exists");
         prepare_firewall_zone();
