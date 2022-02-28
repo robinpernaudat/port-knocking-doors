@@ -9,8 +9,7 @@
 //! Else we will work with default values.
 
 use serde::Deserialize;
-use std::time::Duration;
-//use derivative::Derivative;
+//use std::time::Duration;
 
 pub static mut CONFIGURATION: Option<Config> = None; //Config::new();//{ports_to_controls: vec![], opening_sequence: vec![], ..Config::default()};
 
@@ -19,31 +18,49 @@ pub struct Config {
     pub ports_to_controls: Vec<u16>,
     pub opening_sequence: Vec<u16>,
     #[serde(default = "ten_secs")]
-    pub firewall_rules_check_periode_seconds: Duration,
+    pub firewall_rules_check_periode_seconds: u64,
     #[serde(default = "five_secs")]
-    pub ignoring_period_after_knock_error: Duration,
+    pub ignoring_period_after_knock_error: u64,
     #[serde(default = "t30secs")]
-    pub max_knocker_live_time: Duration,
+    pub max_knocker_live_time: u64,
     #[serde(default = "ten_secs")]
-    pub max_opened_door_duration: Duration,
+    pub max_opened_door_duration: u64,
     #[serde(default = "ten_secs")]
-    pub doors_cleanup_periode: Duration,
+    pub doors_cleanup_periode: u64,
     //#[serde(default = "ten_secs")]
 }
-fn five_secs() -> Duration {
-    Duration::from_secs(5)
+fn five_secs() -> u64 {
+    5
 }
-fn t30secs() -> Duration {
-    Duration::from_secs(30)
+fn t30secs() -> u64 {
+    30
 }
-fn ten_secs() -> Duration {
-    Duration::from_secs(10)
+fn ten_secs() -> u64 {
+    10
 }
 
 const DEFAULT_CONFIG_CONTENT: &str = r#"
 ports_to_controls = [22]
 opening_sequence = [16001,16002,16003,16004,16005]
 "#;
+
+pub fn help() -> String {
+    r####"
+
+Help for using the configuration file.
+
+You can configure this variables in the configuration file:
+
+ports_to_controls = [22]      # It's the ports that this programme will open for knockers.
+opening_sequence = [16001,16002,16003,16004,16005]      # It's the sequence of port onwhiche we send UDP datagram "knock\n".
+firewall_rules_check_periode_seconds=10      # The firewall rules are periodicaly checked. This is the periode.
+ignoring_period_after_knock_error=5      # A knocker must wait this duration before send new knocks
+max_knocker_live_time=30      # After this periode a knocker is forgotten. He have to restart the sequence
+max_opened_door_duration=10      # When a port is opened, it's for few seconds (define this duration with this variable)
+doors_cleanup_periode=10      # The doors have to be cleaned periodicaly. This is the periode.
+
+    "####.to_string()
+}
 
 fn load(path: String) -> Result<Config, String> {
     let buf: String = std::fs::read_to_string(path)

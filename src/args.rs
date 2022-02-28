@@ -23,6 +23,10 @@ pub struct Args {
     #[clap(long)]
     /// with this option, a default configuration file is set, on home path.
     pub set_configuration_file_in_home: bool,
+
+    #[clap(long)]
+    /// show an help for the configuration file
+    pub show_configuration_file_help: bool,
 }
 
 pub fn parse() -> Args {

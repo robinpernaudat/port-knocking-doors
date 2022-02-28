@@ -40,12 +40,12 @@ impl Knockers {
 
     pub fn event(&mut self, k: knock::Knock) {
         let sequence_size: usize = self.sequence.len();
-        let ignoring_time_after_error: Duration = unsafe {
+        let ignoring_time_after_error: Duration = Duration::from_secs(unsafe {
             config::CONFIGURATION
                 .clone()
                 .unwrap()
                 .ignoring_period_after_knock_error
-        };
+        });
         assert!(sequence_size > 0);
         match self.list.get_mut(&k.ip) {
             Some(existing_knocker) => {
@@ -103,8 +103,9 @@ impl Knockers {
     pub fn clean_up(&mut self) {
         debug!("cleanup des knockers");
         let mut to_be_deleted: Vec<IpAddr> = Vec::new();
-        let max_knocker_live_time =
-            unsafe { config::CONFIGURATION.clone().unwrap().max_knocker_live_time };
+        let max_knocker_live_time = Duration::from_secs(unsafe {
+            config::CONFIGURATION.clone().unwrap().max_knocker_live_time
+        });
         for (ip, knocker) in &self.list {
             let duration_since_last_knock = Instant::now() - knocker.last_knock;
             if duration_since_last_knock > max_knocker_live_time {

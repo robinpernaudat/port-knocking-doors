@@ -54,6 +54,10 @@ async fn main() {
             config::store();
             return;
         }
+        if MAIN_ARGS.clone().unwrap().show_configuration_file_help {
+            println!("{}", config::help());
+            return;
+        }
     }
     info!("Starting");
     if data::is_terminal() {

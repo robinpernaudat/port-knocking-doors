@@ -61,16 +61,18 @@ fn new() -> WFComT {
 impl WFComT {
     pub fn wait_the_end(&self) {
         debug!("Wait for the end of the workflow");
-        let max_knocker_live_time =
-            unsafe { config::CONFIGURATION.clone().unwrap().max_knocker_live_time };
-        let cleanup_periode =
-            unsafe { config::CONFIGURATION.clone().unwrap().doors_cleanup_periode };
-        let firewall_rules_check_periode_seconds = unsafe {
+        let max_knocker_live_time = std::time::Duration::from_secs(unsafe {
+            config::CONFIGURATION.clone().unwrap().max_knocker_live_time
+        });
+        let cleanup_periode = std::time::Duration::from_secs(unsafe {
+            config::CONFIGURATION.clone().unwrap().doors_cleanup_periode
+        });
+        let firewall_rules_check_periode_seconds = std::time::Duration::from_secs(unsafe {
             config::CONFIGURATION
                 .clone()
                 .unwrap()
                 .firewall_rules_check_periode_seconds
-        };
+        });
         let mut last_knock_cleanup: Instant = Instant::now();
         let mut last_doors_cleanup: Instant = Instant::now();
         let mut last_firwall_checkup: Instant = Instant::now();

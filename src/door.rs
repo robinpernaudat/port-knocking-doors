@@ -30,17 +30,16 @@ impl Doors {
     }
     pub fn cleanup(&mut self) {
         debug!("doors cleanning up");
+        let dur = std::time::Duration::from_secs(unsafe {
+            config::CONFIGURATION
+                .clone()
+                .unwrap()
+                .max_opened_door_duration
+        });
         let mut idx_of_door_to_be_deleted: Vec<IpAddr> = Vec::new();
         for d in &self.l {
             let duration_since_last_knock = Instant::now() - d.1.opened_instant;
-            if duration_since_last_knock
-                > unsafe {
-                    config::CONFIGURATION
-                        .clone()
-                        .unwrap()
-                        .max_opened_door_duration
-                }
-            {
+            if duration_since_last_knock > dur {
                 idx_of_door_to_be_deleted.push(d.1.ip);
             }
         }

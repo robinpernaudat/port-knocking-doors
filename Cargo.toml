@@ -21,4 +21,3 @@ crossbeam-channel = "0.5.2"
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.5"
 dirs = "4.0"
-#derivative="2.2"
