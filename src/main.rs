@@ -5,6 +5,7 @@ mod firewall;
 mod knock;
 mod knockers;
 mod workflow;
+mod config;
 
 use log::{/*trace, warn,*/ debug, info};
 
@@ -50,6 +51,7 @@ async fn main() {
     init_log();
     unsafe {
         MAIN_ARGS = Some(args::parse());
+        config::CONFIGURATION = config::load_conf();
     }
     info!("Starting");
     if data::is_terminal() {

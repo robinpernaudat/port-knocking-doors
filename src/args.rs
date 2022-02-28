@@ -16,6 +16,10 @@ pub struct Args {
     /// this is the ports that we want to control. The format is like this "port1,port2,..." (examples: "22", "22,80,8080")
     #[clap(short, long, default_value_t = String::from("#####"))]
     pub ports: String,
+
+    /// set configuration file path
+    #[clap(short, long, default_value_t = String::from(""))]
+    pub conf: String,
 }
 
 pub fn parse() -> Args {
