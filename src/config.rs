@@ -18,6 +18,11 @@ pub struct Config{
     pub opening_sequence: Vec<u16>,
 }
 
+const DEFAULT_CONFIG_CONTENT: &str=r#"
+ports_to_controls = [22]
+opening_sequence = [16001,16002,16003,16004,16005]
+"#;
+
 fn load(path: String)->Result<Config, String>{
     let buf: String = std::fs::read_to_string(path).map_err(|e| format!("Can't read the configuration file. ({})",e))?;
     let c: Config = toml::from_str(buf.as_str()).map_err(|e| format!("Can't parse the toml file : ({})", e))?;
@@ -52,8 +57,13 @@ pub fn load_conf()->Config{
     }
 
     //use default
-    toml::from_str(r#"
-    ports_to_controls = [22]
-    opening_sequence = [16001,16002,16003,16004,16005]
-    "#).unwrap()
+    toml::from_str(DEFAULT_CONFIG_CONTENT).unwrap()
+}
+
+pub fn store(){
+    if let Some(home) = dirs::home_dir(){
+        let path_string = format!("{}/.port_knocker.toml", home.to_str().unwrap());
+        let path = std::path::Path::new(path_string.as_str());
+        let _ = std::fs::write(path, DEFAULT_CONFIG_CONTENT);
+    }
 }

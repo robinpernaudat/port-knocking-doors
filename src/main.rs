@@ -52,6 +52,10 @@ async fn main() {
     unsafe {
         MAIN_ARGS = Some(args::parse());
         config::CONFIGURATION = config::load_conf();
+        if MAIN_ARGS.clone().unwrap().set_configuration_file_in_home{
+            config::store();
+            return;
+        }
     }
     info!("Starting");
     if data::is_terminal() {

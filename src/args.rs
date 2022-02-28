@@ -20,6 +20,10 @@ pub struct Args {
     /// set configuration file path
     #[clap(short, long, default_value_t = String::from(""))]
     pub conf: String,
+
+    #[clap(long)]
+    /// with this option, a default configuration file is set, on home path.
+    pub set_configuration_file_in_home: bool,
 }
 
 pub fn parse() -> Args {
