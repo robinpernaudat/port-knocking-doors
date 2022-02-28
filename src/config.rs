@@ -54,8 +54,8 @@ You can configure this variables in the configuration file:
 ports_to_controls = [22]      # It's the ports that this programme will open for knockers.
 opening_sequence = [16001,16002,16003,16004,16005]      # It's the sequence of port onwhiche we send UDP datagram "knock\n".
 firewall_rules_check_periode_seconds=10      # The firewall rules are periodicaly checked. This is the periode.
-ignoring_period_after_knock_error=5      # A knocker must wait this duration before send new knocks
-max_knocker_live_time=30      # After this periode a knocker is forgotten. He have to restart the sequence
+ignoring_period_after_knock_error=5      # A knocker must wait this duration before send new knocks if it failed.
+max_knocker_live_time=30      # After this periode a knocker is forgotten. He have to restart the sequence.
 max_opened_door_duration=10      # When a port is opened, it's for few seconds (define this duration with this variable)
 doors_cleanup_periode=10      # The doors have to be cleaned periodicaly. This is the periode.
 
