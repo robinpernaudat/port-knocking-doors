@@ -1,11 +1,11 @@
 mod args;
+mod config;
 mod data;
 mod door;
 mod firewall;
 mod knock;
 mod knockers;
 mod workflow;
-mod config;
 
 use log::{/*trace, warn,*/ debug, info};
 
@@ -28,31 +28,29 @@ impl log::Log for SimpleLogger {
 }
 
 #[cfg(debug_assertions)]
-pub fn init_log()  {
+pub fn init_log() {
     let env = env_logger::Env::default()
-    .filter_or("MY_LOG_LEVEL", "debug")
-    .write_style_or("MY_LOG_STYLE", "always");
+        .filter_or("MY_LOG_LEVEL", "debug")
+        .write_style_or("MY_LOG_STYLE", "always");
     env_logger::init_from_env(env);
 }
 #[cfg(not(debug_assertions))]
-pub fn init_log()  {
+pub fn init_log() {
     let env = env_logger::Env::default()
-    .filter_or("MY_LOG_LEVEL", "info")
-    .write_style_or("MY_LOG_STYLE", "always");
+        .filter_or("MY_LOG_LEVEL", "info")
+        .write_style_or("MY_LOG_STYLE", "always");
     env_logger::init_from_env(env);
 }
-
 
 static mut MAIN_ARGS: Option<args::Args> = None;
 
 #[tokio::main]
 async fn main() {
-    
     init_log();
     unsafe {
         MAIN_ARGS = Some(args::parse());
-        config::CONFIGURATION = config::load_conf();
-        if MAIN_ARGS.clone().unwrap().set_configuration_file_in_home{
+        config::CONFIGURATION = Some(config::load_conf());
+        if MAIN_ARGS.clone().unwrap().set_configuration_file_in_home {
             config::store();
             return;
         }

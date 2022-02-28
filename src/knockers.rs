@@ -1,13 +1,10 @@
 //! Knockers are client who knock.
 
-use crate::{data, knock, workflow};
+use crate::{config, data, knock, workflow};
 use log::debug;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::time::{Duration, Instant};
-
-const IGNORING_TIME_AFTER_ERROR: Duration = Duration::from_secs(5);
-pub const MAX_KNOCKER_LIVE_TIME: Duration = Duration::from_secs(30);
 
 static mut MAIN_KNOCKERS: Option<Knockers> = None;
 
@@ -43,16 +40,22 @@ impl Knockers {
 
     pub fn event(&mut self, k: knock::Knock) {
         let sequence_size: usize = self.sequence.len();
+        let ignoring_time_after_error: Duration = unsafe {
+            config::CONFIGURATION
+                .clone()
+                .unwrap()
+                .ignoring_period_after_knock_error
+        };
         assert!(sequence_size > 0);
         match self.list.get_mut(&k.ip) {
             Some(existing_knocker) => {
                 if existing_knocker.error {
                     let time_from_last_time: Duration =
                         Instant::now() - existing_knocker.last_knock;
-                    if time_from_last_time < IGNORING_TIME_AFTER_ERROR {
+                    if time_from_last_time < ignoring_time_after_error {
                         debug!(
                             "This peer was banned, it have to wait for {} seconds from now !",
-                            IGNORING_TIME_AFTER_ERROR.as_secs()
+                            ignoring_time_after_error.as_secs()
                         );
                         existing_knocker.last_knock = Instant::now();
                         return;
@@ -100,9 +103,11 @@ impl Knockers {
     pub fn clean_up(&mut self) {
         debug!("cleanup des knockers");
         let mut to_be_deleted: Vec<IpAddr> = Vec::new();
+        let max_knocker_live_time =
+            unsafe { config::CONFIGURATION.clone().unwrap().max_knocker_live_time };
         for (ip, knocker) in &self.list {
             let duration_since_last_knock = Instant::now() - knocker.last_knock;
-            if duration_since_last_knock > MAX_KNOCKER_LIVE_TIME {
+            if duration_since_last_knock > max_knocker_live_time {
                 to_be_deleted.push(ip.clone());
             }
         }

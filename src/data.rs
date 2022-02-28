@@ -2,8 +2,8 @@
 //!
 //! TODO us a configuration file
 //!
-use crate::MAIN_ARGS;
 use crate::config;
+use crate::MAIN_ARGS;
 use regex::Regex;
 
 // struct Parameters{
@@ -56,7 +56,15 @@ fn ports_string() -> String {
     }
 
     // get the ports from the conf
-    unsafe{format!("{:?}", config::CONFIGURATION.ports_to_controls).replace(" ","").replace("[","").replace("]","")}
+    unsafe {
+        format!(
+            "{:?}",
+            config::CONFIGURATION.clone().unwrap().ports_to_controls
+        )
+        .replace(" ", "")
+        .replace("[", "")
+        .replace("]", "")
+    }
 }
 
 pub fn ports() -> Vec<u16> {
@@ -101,7 +109,15 @@ fn knock_seq_string() -> String {
     }
 
     // get the sequence from the conf
-    unsafe{format!("{:?}", config::CONFIGURATION.opening_sequence).replace(" ","").replace("[","").replace("]","")}
+    unsafe {
+        format!(
+            "{:?}",
+            config::CONFIGURATION.clone().unwrap().opening_sequence
+        )
+        .replace(" ", "")
+        .replace("[", "")
+        .replace("]", "")
+    }
 }
 
 pub fn knock_seq() -> Vec<u16> {
@@ -133,20 +149,20 @@ mod tests {
         assert!(r.is_match("222,3,5,97,6546,7974,14,14,41,41,41"));
         assert!(!r.is_match("54,,98,897,84,654,64,654,65,4654,e,2"));
     }
-    
+
     #[test]
-    fn test_ports_from_conf(){
+    fn test_ports_from_conf() {
         let re = match_port_liste();
         //println!("+++{}+++",format!("{:?}",vec![22,80,8080,10080]).as_str());
         assert!(re.is_match("[22, 80, 8080, 10080]"));
-        assert!(re.is_match(format!("{:?}",vec![22,80,8080,10080]).as_str()));
+        assert!(re.is_match(format!("{:?}", vec![22, 80, 8080, 10080]).as_str()));
     }
 
     #[test]
-    fn test_seq_from_conf(){
+    fn test_seq_from_conf() {
         let re = re_matching_sequence();
         //println!("+++{}+++",format!("{:?}",vec![22,80,8080,10080]).as_str());
         assert!(re.is_match("[16001, 16002, 16003, 16004, 16005]"));
-        assert!(re.is_match(format!("{:?}",vec![16001,16002,16003,16004,16005]).as_str()));
+        assert!(re.is_match(format!("{:?}", vec![16001, 16002, 16003, 16004, 16005]).as_str()));
     }
 }

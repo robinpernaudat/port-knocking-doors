@@ -16,7 +16,7 @@ use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use crate::{door, firewall, knock, knockers};
+use crate::{config, door, firewall, knock, knockers};
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum Msg {
@@ -61,6 +61,16 @@ fn new() -> WFComT {
 impl WFComT {
     pub fn wait_the_end(&self) {
         debug!("Wait for the end of the workflow");
+        let max_knocker_live_time =
+            unsafe { config::CONFIGURATION.clone().unwrap().max_knocker_live_time };
+        let cleanup_periode =
+            unsafe { config::CONFIGURATION.clone().unwrap().doors_cleanup_periode };
+        let firewall_rules_check_periode_seconds = unsafe {
+            config::CONFIGURATION
+                .clone()
+                .unwrap()
+                .firewall_rules_check_periode_seconds
+        };
         let mut last_knock_cleanup: Instant = Instant::now();
         let mut last_doors_cleanup: Instant = Instant::now();
         let mut last_firwall_checkup: Instant = Instant::now();
@@ -68,18 +78,18 @@ impl WFComT {
             std::thread::sleep(Duration::from_millis(100));
 
             let time_since_last_knock_clean_up: Duration = Instant::now() - last_knock_cleanup;
-            if time_since_last_knock_clean_up > knockers::MAX_KNOCKER_LIVE_TIME {
+            if time_since_last_knock_clean_up > max_knocker_live_time {
                 last_knock_cleanup = Instant::now();
                 knockers::clean_up();
             }
             let time_since_last_door_clean_up: Duration = Instant::now() - last_doors_cleanup;
-            if time_since_last_door_clean_up > door::CLEANUP_PERIODE {
+            if time_since_last_door_clean_up > cleanup_periode {
                 last_doors_cleanup = Instant::now();
                 door::cleanup();
             }
 
             let time_since_last_firewall_checkup = Instant::now() - last_firwall_checkup;
-            if time_since_last_firewall_checkup > firewall::RULES_CHECK_PERIODE {
+            if time_since_last_firewall_checkup > firewall_rules_check_periode_seconds {
                 last_firwall_checkup = Instant::now();
                 firewall::checkup(false);
             }

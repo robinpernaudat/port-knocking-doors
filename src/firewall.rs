@@ -8,7 +8,6 @@
 use log::{debug, info};
 use std::net::IpAddr;
 use std::process::Command;
-use std::time::Duration;
 
 use crate::data;
 
@@ -21,7 +20,6 @@ enum FirewallType {
     WINDOWS_DEFAULT,
 }
 
-pub const RULES_CHECK_PERIODE: Duration = Duration::from_secs(10);
 static mut FIREWALL_TYPE: FirewallType = FirewallType::UNDEFINED;
 
 #[cfg(target_os = "linux")]
@@ -81,8 +79,6 @@ pub fn close(ip: IpAddr) -> bool {
     };
     return true;
 }
-
-
 
 fn is_firewall_zone_exists() -> bool {
     debug!("Checking if the firewall zone exists");

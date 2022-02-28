@@ -1,6 +1,5 @@
 use clap::Parser;
 
-
 /// This software manage the port knocking.
 ///
 /// You can also use the environnement variables:
